@@ -52,6 +52,9 @@ import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie 
 } from 'recharts';
 import { motion, AnimatePresence } from 'motion/react';
+import { APP, PageID } from './components/APP';
+import { PurchasesView } from './components/PurchasesView';
+import { DashboardView } from './components/DashboardView';
 
 // --- STYLING UTILS ---
 const cn = (...classes: any[]) => classes.filter(Boolean).join(' ');
@@ -911,183 +914,30 @@ export default function App() {
           </motion.div>
         </div>
       ) : (
-        // DASHBOARD VIEW
-        <div className="w-full flex">
-          {/* SIDEBAR DRAWER */}
-          <aside className={cn(
-            "fixed lg:static inset-y-0 left-0 bg-navy-800 border-r border-navy-700/60 z-40 transition-all duration-300 flex flex-col justify-between hidden lg:flex no-print",
-            isSidebarCollapsed ? "w-20" : "w-64"
-          )}>
-            <div className="flex flex-col">
-              <div className={cn("p-6 flex items-center justify-between border-b border-navy-700/60", isSidebarCollapsed && "justify-center")}>
-                {!isSidebarCollapsed && <span className="text-xl font-bold text-white tracking-widest bg-gradient-to-r from-accent to-blue-400 bg-clip-text text-transparent font-sans">WOODY ERP</span>}
-                <button onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} className="p-2 hover:bg-navy-700 rounded-xl transition-colors text-slate-400 hover:text-white">
-                  <Menu className="w-5 h-5" />
-                </button>
-              </div>
+        <APP.Layout
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          user={user}
+          onLogout={handleLogout}
+        >
+          <AnimatePresence mode="wait">
+            <APP.Router activeTab={activeTab} user={user} childrenMap={{
+              dashboard: (
+                <DashboardView 
+                  user={user}
+                  stocks={stocks}
+                  customers={customers}
+                  suppliers={suppliers}
+                  reportsData={reportsData}
+                  subCategories={subCategories}
+                  loadReports={loadReports}
+                  loadInventoryData={loadInventoryData}
+                  setActiveTab={setActiveTab}
+                  triggerToast={triggerToast}
+                />
+              ),
 
-              <nav className="p-4 space-y-2 mt-4 flex-1">
-                {NAV_ITEMS.filter(item => item.roles.includes(user.role)).map(item => (
-                  <button
-                    key={item.id}
-                    onClick={() => {
-                      setActiveTab(item.id);
-                    }}
-                    className={cn(
-                      "w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 font-medium text-sm group",
-                      activeTab === item.id 
-                        ? "bg-accent text-navy-900 font-bold shadow-lg shadow-accent/15" 
-                        : "text-slate-400 hover:bg-navy-700 hover:text-white"
-                    )}
-                  >
-                    <item.icon className="w-5 h-5 flex-shrink-0" />
-                    {!isSidebarCollapsed && <span>{item.label}</span>}
-                  </button>
-                ))}
-              </nav>
-            </div>
-
-            <div className="p-4 border-t border-navy-700/60">
-              <button onClick={handleLogout} className="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-rose-400 hover:bg-rose-500/10 font-medium text-sm transition-all">
-                <LogOut className="w-5 h-5" />
-                {!isSidebarCollapsed && <span>Deauthorize Key</span>}
-              </button>
-            </div>
-          </aside>
-
-          {/* MAIN COLUMN OVERLAY */}
-          <main className="flex-1 h-screen overflow-y-auto overflow-x-hidden relative flex flex-col">
-            <header className="sticky top-0 z-30 bg-navy-900/85 backdrop-blur-md px-6 lg:px-8 py-4 flex items-center justify-between border-b border-navy-700/60 no-print">
-              <div className="flex items-center gap-4">
-                <h2 className="text-xl font-bold tracking-tight text-white capitalize bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">{activeTab} Panel</h2>
-                <div className="hidden md:flex items-center gap-2 px-2.5 py-1 bg-navy-800 text-[10px] uppercase font-bold text-slate-400 rounded-full border border-navy-700/50">
-                  <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-ping" /> Connection Established
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="avatar-panel flex items-center gap-3 px-3.5 py-1.5 bg-navy-800 text-slate-300 rounded-2xl border border-navy-700/60 shadow-lg shadow-black/10">
-                  <div className="w-7 h-7 bg-accent/20 text-accent rounded-full border border-accent/20 flex items-center justify-center font-bold font-mono text-sm uppercase">
-                    {user.name ? user.name[0] : 'U'}
-                  </div>
-                  <div className="text-left hidden sm:block">
-                    <p className="text-xs font-bold leading-tight text-white">{user.name}</p>
-                    <p className="text-[9px] uppercase tracking-wider font-semibold text-accent leading-none mt-0.5">{user.role}</p>
-                  </div>
-                </div>
-              </div>
-            </header>
-
-            <div className="p-6 lg:p-8 flex-1 pb-24 lg:pb-8 no-print">
-              <AnimatePresence mode="wait">
-                {/* 1. DASHBOARD OVERVIEW */}
-                {activeTab === 'dashboard' && dashboardStats && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -12 }}
-                    className="space-y-8"
-                  >
-                    <div className="bg-navy-800 p-6 rounded-3xl border border-navy-700/80 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden backdrop-blur-md">
-                      <div className="absolute top-0 right-0 w-64 h-64 bg-accent/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-                      <div>
-                        <h3 className="text-2xl font-bold text-white tracking-tight">Active Operation Centre 🎛️</h3>
-                        <p className="text-slate-400 text-sm mt-1 max-w-xl leading-relaxed">Central Wood ERP controls for CAR-inventory batches, piece dimensions, local collection logs, and central database tables.</p>
-                      </div>
-                      <div className="flex gap-3">
-                        <button onClick={() => { setActiveTab('pos'); }} className="px-5 py-3 bg-accent text-navy-900 hover:bg-accent/90 rounded-2xl text-xs font-bold tracking-wider uppercase transition-all shadow-lg hover:scale-[1.01]">POS Checkout</button>
-                        <button onClick={() => { loadInventoryData(); loadReports(); triggerToast("Pristine spreadsheet data fetched!", "success"); }} className="p-3 bg-navy-700 hover:bg-navy-600 rounded-2xl text-slate-400 hover:text-white transition-colors border border-navy-600"><RefreshCcw className="w-5 h-5" /></button>
-                      </div>
-                    </div>
-
-                    {/* METRICS ROW */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div className="bg-navy-800 p-6 rounded-3xl border border-navy-700/60 shadow-xl hover:border-accent/20 transition-all duration-300">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-xs font-bold uppercase tracking-wider text-slate-400 font-mono">Gross Trade Collection</p>
-                            <h4 className="text-3xl font-bold text-white mt-2 font-mono tracking-tight">${Number(dashboardStats.totalRevenue).toFixed(2)}</h4>
-                          </div>
-                          <div className="p-3.5 bg-accent/10 border border-accent/20 rounded-2xl text-accent"><Wallet className="w-6 h-6" /></div>
-                        </div>
-                      </div>
-                      <div className="bg-navy-800 p-6 rounded-3xl border border-navy-700/60 shadow-xl hover:border-accent/20 transition-all duration-300">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-xs font-bold uppercase tracking-wider text-slate-400 font-mono">Wood Piece Stocks</p>
-                            <h4 className="text-3xl font-bold text-white mt-2 font-mono tracking-tight">{stocks.filter(s => s.status === 'available').length} Pieces</h4>
-                          </div>
-                          <div className="p-3.5 bg-blue-500/10 border border-blue-500/20 rounded-2xl text-blue-400"><Package className="w-6 h-6" /></div>
-                        </div>
-                      </div>
-                      <div className="bg-navy-800 p-6 rounded-3xl border border-navy-700/60 shadow-xl hover:border-accent/20 transition-all duration-300">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-xs font-bold uppercase tracking-wider text-slate-400 font-mono">Net Operating Income</p>
-                            <h4 className="text-3xl font-bold text-white mt-2 font-mono tracking-tight">${Number(dashboardStats.netPnL).toFixed(2)}</h4>
-                          </div>
-                          <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-400"><TrendingUp className="w-6 h-6" /></div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                      {/* CHART */}
-                      <div className="bg-navy-800 p-6 rounded-3xl border border-navy-700/60 shadow-xl lg:col-span-8 space-y-6">
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-bold text-white text-base">Trade Sales Dynamic Trend</h4>
-                          <span className="text-xs font-medium px-2 py-1 bg-navy-900 border border-navy-700 rounded text-accent font-mono font-bold">April 2026 Timeline</span>
-                        </div>
-                        <div className="h-[280px]">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={dashboardStats.monthlySalesTrend}>
-                              <defs>
-                                <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                                  <stop offset="5%" stopColor="#64ffda" stopOpacity={0.25}/>
-                                  <stop offset="95%" stopColor="#64ffda" stopOpacity={0}/>
-                                </linearGradient>
-                              </defs>
-                              <CartesianGrid strokeDasharray="3 3" stroke="#233554" vertical={false} />
-                              <XAxis dataKey="date" stroke="#8892b0" fontSize={11} tickFormatter={(val) => val.split('T')[0]} />
-                              <YAxis stroke="#8892b0" fontSize={11} />
-                              <Tooltip 
-                                contentStyle={{ backgroundColor: '#112240', border: '1px solid #233554', borderRadius: '12px' }}
-                                itemStyle={{ color: '#64ffda', fontFamily: 'monospace' }}
-                              />
-                              <Area type="monotone" dataKey="amount" stroke="#64ffda" fillOpacity={1} fill="url(#areaGradient)" strokeWidth={2.5} />
-                            </AreaChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </div>
-
-                      {/* ACTION LOGS */}
-                      <div className="bg-navy-800 p-6 rounded-3xl border border-navy-700/60 shadow-xl lg:col-span-4 flex flex-col justify-between">
-                        <div>
-                          <h4 className="font-bold text-white text-base mb-4">Quick Operations</h4>
-                          <p className="text-xs text-slate-400 mb-6">Perform central ERP activities directly under complete ACID-lock control:</p>
-                        </div>
-                        <div className="space-y-3">
-                          <button onClick={() => { setActiveTab('inventory'); setIsAddPieceOpen(true); }} className="w-full p-4 bg-navy-900 hover:bg-navy-700 rounded-2xl border border-navy-700/80 hover:border-accent/40 text-left transition-all duration-300 flex items-center justify-between group">
-                            <div>
-                              <p className="text-sm font-bold text-white">Add Log Piece</p>
-                              <p className="text-xs text-slate-400 mt-0.5">Quick manual stock register</p>
-                            </div>
-                            <Plus className="w-5 h-5 text-slate-500 group-hover:text-accent transition-colors" />
-                          </button>
-                          <button onClick={() => { setActiveTab('inventory'); setIsBulkImportOpen(true); }} className="w-full p-4 bg-navy-900 hover:bg-navy-700 rounded-2xl border border-navy-700/80 hover:border-accent/40 text-left transition-all duration-300 flex items-center justify-between group">
-                            <div>
-                              <p className="text-sm font-bold text-white">Bulk CSV Seed</p>
-                              <p className="text-xs text-slate-400 mt-0.5">Import pieces ledger dynamically</p>
-                            </div>
-                            <FileSpreadsheet className="w-5 h-5 text-slate-500 group-hover:text-accent transition-colors" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* 2. POS TERMINAL PANEL */}
-                {activeTab === 'pos' && (
+                pos: (
                   <motion.div 
                     initial={{ opacity: 0 }} 
                     animate={{ opacity: 1 }} 
@@ -1271,10 +1121,9 @@ export default function App() {
                       </div>
                     </div>
                   </motion.div>
-                )}
+                ),
 
-                {/* 3. CENTRAL STOCK LEDGER TAB */}
-                {activeTab === 'inventory' && (
+                inventory: (
                   <motion.div 
                     initial={{ opacity: 0 }} 
                     animate={{ opacity: 1 }} 
@@ -1391,10 +1240,9 @@ export default function App() {
                       </div>
                     </div>
                   </motion.div>
-                )}
+                ),
 
-                {/* 4. REPORTS OPERATIONS PAGE */}
-                {activeTab === 'reports' && reportsData && (
+                reports: reportsData ? (
                   <motion.div 
                     initial={{ opacity: 0 }} 
                     animate={{ opacity: 1 }} 
@@ -1486,10 +1334,9 @@ export default function App() {
                       </div>
                     </div>
                   </motion.div>
-                )}
+                ) : null,
 
-                {/* 5. CONFIG PANELS TAB */}
-                {activeTab === 'settings' && businessSettings.length > 0 && (
+                settings: businessSettings.length > 0 ? (
                   <motion.div 
                     initial={{ opacity: 0 }} 
                     animate={{ opacity: 1 }} 
@@ -1522,31 +1369,18 @@ export default function App() {
                       </button>
                     </div>
                   </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* MOBILE SYSTEM BOTTOM NAVIGATOR */}
-            <nav className="fixed bottom-0 inset-x-0 bg-navy-850/95 backdrop-blur-md border-t border-navy-700/60 lg:hidden flex justify-around p-3 z-[45] no-print shadow-xl">
-              {NAV_ITEMS.filter(item => item.roles.includes(user.role)).map(item => (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    setActiveTab(item.id);
-                  }}
-                  className={cn(
-                    "p-2 rounded-xl flex flex-col items-center gap-1 text-[10px] font-bold uppercase transition-colors tracking-wider flex-1 text-center",
-                    activeTab === item.id ? "text-accent fill-accent" : "text-slate-500"
-                  )}
-                >
-                  <item.icon className="w-5 h-5 mx-auto" />
-                  <span className="text-[9px] mt-1">{item.label.split(' ')[0]}</span>
-                </button>
-              ))}
-            </nav>
-          </main>
-        </div>
-      )}
+                ) : null,
+                purchases: (
+                  <PurchasesView 
+                    subCategories={subCategories} 
+                    suppliers={suppliers} 
+                    triggerToast={triggerToast} 
+                  />
+                )
+              }} />
+            </AnimatePresence>
+          </APP.Layout>
+        )}
 
       {/* MODAL 1: REGISTER PIECE */}
       <AnimatePresence>
