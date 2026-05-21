@@ -131,6 +131,67 @@ async function startServer() {
 
   // --- API ROUTES ---
 
+  // Auth: Validate User
+  app.post('/api/auth/validate-user', (req, res) => {
+    const { email, password } = req.body;
+    const user = DB.Users.find((u: any) => u.email === email && u.password === password);
+    if (user) {
+      const { password, ...userWithoutPass } = user;
+      res.json({ success: true, user: userWithoutPass });
+    } else {
+      res.json({ success: false, message: "Invalid credentials" });
+    }
+  });
+
+  // Auth: Create Session
+  app.post('/api/auth/create-session', (req, res) => {
+    const { user } = req.body;
+    if (user && user.id) {
+      res.json({
+        success: true,
+        session: {
+          token: "SES-" + Date.now() + "-" + Math.floor(Math.random() * 1000000),
+          user,
+          created_at: new Date().toISOString()
+        }
+      });
+    } else {
+      res.json({ success: false, message: "A valid user object is required." });
+    }
+  });
+
+  // Auth: Destroy Session
+  app.post('/api/auth/destroy-session', (req, res) => {
+    const { userId } = req.body;
+    res.json({ success: true, message: "Session successfully signed out." });
+  });
+
+  // Auth: Send OTP
+  app.post('/api/auth/send-otp', (req, res) => {
+    const { email } = req.body;
+    const user = DB.Users.find((u: any) => u.email === email);
+    if (user) {
+      const otp = generateOTP();
+      user.otp = otp;
+      user.otp_expires = Date.now() + 10 * 60 * 1000;
+      console.log(`[MAILAPP SIMULATION] Sending OTP ${otp} to ${email}`);
+      res.json({ success: true, message: "OTP has been successfully sent to " + email });
+    } else {
+      res.json({ success: false, message: "No user found with this email address." });
+    }
+  });
+
+  // Auth: Verify OTP
+  app.post('/api/auth/verify-otp', (req, res) => {
+    const { email, otp } = req.body;
+    const user = DB.Users.find((u: any) => u.email === email && u.otp === otp && u.otp_expires > Date.now());
+    if (user) {
+      res.json({ success: true, message: "Verification token verified successfully." });
+    } else {
+      res.json({ success: false, message: "Invalid or expired OTP code." });
+    }
+  });
+
   // Auth: Login
   app.post('/api/auth/login', (req, res) => {
     const { email, password } = req.body;
