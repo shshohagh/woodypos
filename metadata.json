@@ -1,0 +1,11 @@
+{
+  "name": "Woody POS",
+  "description": "A complete Wood Trading POS system with inventory management, role-based dashboards, and detailed financial reporting.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
