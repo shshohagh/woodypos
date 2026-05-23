@@ -42,7 +42,7 @@ export const NAV_ITEMS: NavItem[] = [
   { id: 'inventory', label: 'Central Stocks', icon: Package, roles: ['admin', 'manager', 'warehouse_staff'] },
   { id: 'purchases', label: 'Purchases Ledger', icon: CreditCard, roles: ['admin', 'manager', 'warehouse_staff'] },
   { id: 'reports', label: 'Insights & Reports', icon: BarChart3, roles: ['admin', 'manager'] },
-  { id: 'settings', label: 'Configuration', icon: SettingsIcon, roles: ['admin'] },
+  { id: 'settings', label: 'Setup', icon: SettingsIcon, roles: ['admin'] },
 ];
 
 interface SidebarProps {
